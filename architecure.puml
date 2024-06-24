@@ -1,0 +1,48 @@
+@startuml frontier-sensor
+title Frontier Sensor SW Architecture
+
+node "Frontier Sensor" {
+    frame "Cameras" {
+        [Camera]
+    }
+    frame "Media Server" {
+        [MediaMTX]
+    }
+    frame "Web Server" {
+        [Nginx]
+    }
+    frame "Back End" {
+        [server.js]
+    }
+    frame "Front End" {
+        [index.html]
+    }
+    frame "Video" {
+        [GStreamer Pipeline]
+    }
+    frame "Managment App" {
+        [project.sh]
+    }
+}
+
+node "User PC" {
+    package "Web Browser" {
+        frame "Frontier Sensor Web Portal" {
+            [Camera Stream]
+        }
+    }
+    package "Media Client" {
+        [RTSP Camera Stream]
+    }
+}
+
+' Connections
+"Frontier Sensor Web Portal" <--> "Web Server"
+"Web Server" --> "Back End"
+"Front End" --> "Web Server"
+"Back End" --> "Video"
+"Media Server" --> "Front End"
+"Media Server" --> "Media Client"
+"Video" --> "Media Server"
+"Video" --> "Cameras"
+@enduml

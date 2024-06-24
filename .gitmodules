@@ -1,0 +1,9 @@
+[submodule "web-server"]
+	path = web-server
+	url = https://github.com/shalex88/nginx-example.git
+[submodule "media-server"]
+	path = media-server
+	url = https://github.com/shalex88/janus-example.git
+[submodule "preprocessing"]
+	path = preprocessing
+	url = https://github.com/shalex88/gst-plugin-python.git
