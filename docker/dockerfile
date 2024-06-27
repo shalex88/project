@@ -1,0 +1,39 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    psmisc \
+    build-essential \
+    curl \
+    wget \
+    git \
+    vim \
+    ca-certificates \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG USERNAME=user
+ARG USER_UID=1001
+RUN useradd -m -u $USER_UID -s /bin/bash $USERNAME && \
+    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Create the runtime directory as root and change ownership to the new user
+RUN mkdir -p /run/user/$USER_UID && \
+    chown $USER_UID:$USER_UID /run/user/$USER_UID && \
+    chmod 700 /run/user/$USER_UID
+
+# Switch to the new user and set the workdir
+USER $USERNAME
+WORKDIR /home/$USERNAME
+
+# Set XDG_RUNTIME_DIR environment variable
+ENV XDG_RUNTIME_DIR=/run/user/$USER_UID
+
+# Install the project
+RUN git clone https://github.com/shalex88/project -b feature/docker --recurse-submodules && \
+    cd project && \
+    find . -type f -exec sed -i 's/sudo systemctl/#sudo systemctl/g' {} + && \
+    ./install.sh
+
+CMD ["/home/user/project/app/run.sh"]

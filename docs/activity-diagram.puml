@@ -1,0 +1,41 @@
+@startuml project-sensor
+'https://plantuml.com/activity-diagram-beta
+
+title project-sensor - Activity Diagram
+
+start
+:init peripherals;
+:start scheduler;
+
+fork
+    :GUI;
+fork again
+    :Message Server;
+fork again
+    :Buttons;
+end fork
+
+repeat
+    while (request received?) is (no)
+    endwhile (yes)
+
+    if (valid?) then (no)
+    else (yes)
+        :enqueue task;
+        :execute;
+        split
+            :exit task;
+            :deinit;
+            stop
+        split again
+            :periphery task;
+            :parse;
+            :dequeue task;
+            fork
+                :periphery execute;
+                :send response;
+                detach
+            end fork
+        end split
+
+@enduml

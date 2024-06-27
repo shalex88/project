@@ -1,0 +1,85 @@
+@startuml project-sensor
+'https://plantuml.com/component-diagram
+
+skinparam componentStyle rectangle
+
+title Project Sensor SW Architecture
+
+node "User PC" {
+    [Project Sensor Web Portal]
+    [Application]
+}
+
+skinparam actorStyle awesome
+actor User
+
+User -down- "Project Sensor Web Portal"
+User -down- "Application"
+
+node "Project Sensor" {
+    package "MVP Architecture" #line.dashed {
+        package "Model" #line.dashed {
+            package "Event-Driven Architecture" #line.dashed {
+                ()IntSocket as "Socket/gRPC"
+                [Event Manager] -up- IntSocket
+                [Back-End] -up- [Event Manager] : dispatch events
+            }
+        }
+
+        package "View" #line.dashed {
+            [Web Page]
+        }
+
+        ()ExtSocket as "TCP/UDP Socket"
+
+        package "Presenters" #line.dashed {
+            [Web Server]
+            [Media Server]
+            [TCP/UDP Server]
+        }
+
+        "Web Server" -down- IntSocket
+        "TCP/UDP Server" -down- IntSocket
+
+        "TCP/UDP Server" -up- ExtSocket
+        "Web Server" -up- "Web Page"
+        "Media Server" -up- "Web Page"
+        "Media Server" -up- ExtSocket
+    }
+
+    [project.service]
+
+    package "Cameras" {
+        [1]
+        [2]
+        [3]
+        [4]
+    }
+
+    package "Video" {
+        [Video Pipeline]
+
+        package "video-processing" {
+            component "preprocessing" {
+                [Video Plugin 1]
+            }
+
+            component "postprocessing" {
+                [Video Plugin 2]
+            }
+        }
+
+        "Video Pipeline" -- "video-processing"
+
+    }
+
+    "Video Pipeline" -down- "Cameras"
+    "Back-End" -down- "Cameras"
+    "Back-End" -down- "Video Pipeline"
+    "Media Server" -down- "Video Pipeline"
+}
+
+"Web Page" -up- "Project Sensor Web Portal"
+ExtSocket -up- "Application"
+
+@enduml

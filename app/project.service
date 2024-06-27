@@ -1,0 +1,12 @@
+[Unit]
+Description=Project Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/project
+ExecStart=/bin/bash -c './app/run.sh > ./log/log.log 2>&1'
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
