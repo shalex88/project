@@ -4,19 +4,19 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 run_web_server() {
     echo "Starting web server..."
-    $SCRIPT_DIR/web-server/run.sh
+    $SCRIPT_DIR/web-server/run.sh start
     echo "Starting web server... Done!"
 }
 
 stop_web_server() {
     echo "Stopping web server..."
-    sudo systemctl stop nginx
+    $SCRIPT_DIR/web-server/run.sh stop
     echo "Stopping web server... Done!"
 }
 
 run_media_server() {
     echo "Starting video server..."
-    $SCRIPT_DIR/media-server/run_mediamtx.sh
+    $SCRIPT_DIR/media-server/run.sh
 }
 
 start_video_stream() {
