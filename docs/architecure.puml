@@ -1,0 +1,72 @@
+@startuml project-sensor
+title Project Sensor SW Architecture
+
+node "Project Sensor" {
+    frame "Control" {
+        package "Managment App" {
+            [run.sh]
+        }
+    }
+
+    frame "Video" {
+        frame "Cameras" {
+            [Camera]
+        }
+
+        package "media-server" {
+            [MediaMTX]
+        }
+
+        package "video" {
+            [GStreamer Pipeline]
+        }
+
+        package "video-processing" {
+            frame "preprocessing" {
+                [Gstreamer Plugin 1]
+            }
+
+            frame "postprocessing" {
+                [Gstreamer Plugin 2]
+            }
+        }
+    }
+
+    package "Web" {
+        frame "web-server" {
+            [Nginx]
+        }
+        frame "Back End" {
+            [server.js]
+        }
+        frame "Front End" {
+            [index.html]
+        }
+    }
+
+}
+
+node "User PC" {
+    package "Web Browser" {
+        frame "Project Sensor Web Portal" {
+            [Camera Stream]
+        }
+    }
+    package "Media Client" {
+        [RTSP Camera Stream]
+    }
+}
+
+"Project Sensor Web Portal" <--> "Front End"
+"web-server" --> "Back End"
+"Front End" --> "web-server"
+"Back End" --> "video" : control
+"media-server" --> "Front End" : stream
+"media-server" --> "Media Client" : stream
+"video" --> "Cameras" : control
+"video" --> "video-processing"  : control
+"video" --> "media-server" : stream
+"Managment App" --> "media-server" : control
+"Managment App" --> "web-server" : control
+
+@enduml
