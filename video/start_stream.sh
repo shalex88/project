@@ -6,11 +6,11 @@ install_dependencies() {
 
 # Function to start the stream
 start_stream() {
-    export GST_PLUGIN_PATH="/home/$USER/project/preprocessing"
+    export GST_PLUGIN_PATH="/home/$USER/project/video-processing"
     camera=$1
     echo "Starting the stream..."
     # GStreamer pipeline
-    pipeline="videotestsrc ! video/x-raw,width=640,height=480,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" ! custom_transform_element ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    pipeline="videotestsrc ! video/x-raw,width=640,height=480,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" ! preprocessing ! postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     # Run the GStreamer pipeline in the background and redirect the output to /dev/null
     gst-launch-1.0 -v $pipeline > /dev/null 2>&1 &
     # Save the process ID of the pipeline
