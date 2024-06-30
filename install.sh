@@ -3,6 +3,7 @@
 install_dependencies() {
     ./web-server/install.sh
     ./media-server/install.sh
+    ./video/install.sh
 }
 
 install_dependencies
