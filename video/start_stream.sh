@@ -4,9 +4,15 @@
 start_stream() {
     export GST_PLUGIN_PATH="/home/$USER/project/video-processing"
     camera=$1
-    echo "Starting the stream..."
+    if [ "$2" = "true" ]; then
+        preprocessing="! preprocessing"
+    fi
+    if [ "$3" = "true" ]; then
+        postprocessing="! postprocessing"
+    fi
+    echo "Starting Camera$camera..."
     # GStreamer pipeline
-    pipeline="videotestsrc ! video/x-raw,width=640,height=480,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" ! preprocessing ! postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    pipeline="videotestsrc ! video/x-raw,width=640,height=480,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     # Run the GStreamer pipeline in the background and redirect the output to /dev/null
     gst-launch-1.0 -v $pipeline > /dev/null 2>&1 &
     # Save the process ID of the pipeline
@@ -29,22 +35,22 @@ case "$2" in
     start)
         case "$1" in
             1)
-                start_stream $1
+                start_stream $1 $3 $4
                 ;;
             2)
-                start_stream $1
+                start_stream $1 $3 $4
                 ;;
             3)
-                start_stream $1
+                start_stream $1 $3 $4
                 ;;
             4)
-                start_stream $1
+                start_stream $1 $3 $4
                 ;;
             all)
-                start_stream 1
-                start_stream 2
-                start_stream 3
-                start_stream 4
+                start_stream 1 $3 $4
+                start_stream 2 $3 $4
+                start_stream 3 $3 $4
+                start_stream 4 $3 $4
                 ;;
             *)
                 echo "Invalid camera ID."
