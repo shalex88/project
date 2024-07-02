@@ -1,5 +1,17 @@
 #!/bin/bash
 
+usage()
+{
+    echo "usage: $(basename "$0") [CAMERA_ID] [RUN] [PREPROCESSING] [POSTPROCESSING]"
+    echo "CAMERA_ID <1|2|..|all> - template project language"
+    echo "RUN <start|stop> - template project language"
+    echo "PREPROCESSING <true|false> - custom preprocessing element"
+    echo "POSTPROCESSING <true|false> - custom postprocessing element"
+    echo "example:"
+    echo "./start-stream all start true true"
+    echo "./start-stream all stop"
+}
+
 # Function to start the stream
 start_stream() {
     export GST_PLUGIN_PATH="/home/$USER/project/video-processing"
@@ -10,11 +22,12 @@ start_stream() {
     if [ "$3" = "true" ]; then
         postprocessing="! postprocessing"
     fi
+
     echo "Starting Camera$camera..."
-    # GStreamer pipeline
-    pipeline="videotestsrc ! video/x-raw,width=640,height=480,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
-    # Run the GStreamer pipeline in the background and redirect the output to /dev/null
+
+    pipeline="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     gst-launch-1.0 -v $pipeline > /dev/null 2>&1 &
+
     # Save the process ID of the pipeline
     echo $! > /tmp/gst_pipeline_$1.pid
 }
@@ -85,7 +98,7 @@ case "$2" in
         esac
         ;;
     *)
-        echo "Usage: $0 {camera_id} {start|stop}"
+        usage
         exit 1
         ;;
 esac
