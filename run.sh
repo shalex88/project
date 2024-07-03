@@ -31,6 +31,7 @@ stop_video_stream() {
     echo "Stopping video server... Done!"
 }
 
+stop_video_stream
 run_web_server
 run_media_server
 stop_video_stream
