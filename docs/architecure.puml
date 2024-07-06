@@ -1,10 +1,24 @@
 @startuml project-sensor
+'https://plantuml.com/component-diagram
+
 title Project Sensor SW Architecture
 
 node "Project Sensor" {
     frame "Control" {
         package "Managment App" {
-            [run.sh]
+            package "Init" {
+              [run.sh]
+            }
+            package "Back End" {
+              [Event-Driven Core]
+              [Model]
+            }
+            package "Controllers" {
+              [tcp-controller.js]
+              [http-controller.js]
+              [uart-controller.js]
+            }
+            "Controllers" --> "Back End" : control
         }
     }
 
@@ -36,10 +50,7 @@ node "Project Sensor" {
         frame "web-server" {
             [Nginx]
         }
-        frame "Back End" {
-            [server.js]
-        }
-        frame "Front End" {
+        frame "Front End (View)" {
             [index.html]
         }
     }
@@ -57,11 +68,11 @@ node "User PC" {
     }
 }
 
-"Project Sensor Web Portal" <--> "Front End"
-"web-server" --> "Back End"
-"Front End" --> "web-server"
+"Project Sensor Web Portal" <--> "Front End (View)"
+"web-server" --> "Controllers"
+"Front End (View)" --> "web-server"
 "Back End" --> "video" : control
-"media-server" --> "Front End" : stream
+"media-server" --> "Front End (View)" : stream
 "media-server" --> "Media Client" : stream
 "video" --> "Cameras" : control
 "video" --> "video-processing"  : control
