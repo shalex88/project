@@ -22,6 +22,8 @@ cd ~/project
 ```bash
 # Start
 sudo systemctl start project
+# Restart
+sudo systemctl restart project
 # Stop
 sudo systemctl stop project
 # Enable autorun

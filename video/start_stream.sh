@@ -25,7 +25,7 @@ start_stream() {
 
     echo "Starting Camera$camera..."
 
-    pipeline="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=30/1,format=YUY2 ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    pipeline="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2 ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     gst-launch-1.0 -v $pipeline > /dev/null 2>&1 &
 
     # Save the process ID of the pipeline
