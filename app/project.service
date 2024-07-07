@@ -1,0 +1,11 @@
+[Unit]
+Description=Project Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/user/project/app/run.sh
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

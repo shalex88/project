@@ -20,8 +20,15 @@ cd ~/project
 ## Run
 
 ```bash
-cd ~/project
-./run.sh
+# Start
+sudo systemctl start project
+# Stop
+sudo systemctl stop project
+# Enable autorun
+sudo systemctl enable project
+# Disable autorun
+sudo systemctl disable project
+
 ```
 
 ## Update

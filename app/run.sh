@@ -1,33 +1,34 @@
 #!/bin/bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_DIR=$(dirname $SCRIPT_DIR)
 
 run_web_server() {
     echo "Starting web server..."
-    $SCRIPT_DIR/web-server/run.sh start
+    $PROJECT_DIR/web-server/run.sh start
     echo "Starting web server... Done!"
 }
 
 stop_web_server() {
     echo "Stopping web server..."
-    $SCRIPT_DIR/web-server/run.sh stop
+    $PROJECT_DIR/web-server/run.sh stop
     echo "Stopping web server... Done!"
 }
 
 run_media_server() {
     echo "Starting video server..."
-    $SCRIPT_DIR/media-server/run.sh
+    $PROJECT_DIR/media-server/run.sh
 }
 
 start_video_stream() {
     echo "Starting video server..."
-    $SCRIPT_DIR/video/start_stream.sh all start
+    $PROJECT_DIR/video/start_stream.sh all start
     echo "Starting video server... Done!"
 }
 
 stop_video_stream() {
     echo "Stopping video server..."
-    $SCRIPT_DIR/video/start_stream.sh all stop
+    $PROJECT_DIR/video/start_stream.sh all stop
     echo "Stopping video server... Done!"
 }
 
