@@ -1,75 +1,97 @@
 @startuml project-sensor
 'https://plantuml.com/component-diagram
 
+left to right direction
+
 title Project Sensor SW Architecture
 
 node "Project Sensor" {
-    frame "Control" {
-        package "Managment App" {
-            package "Init" {
-              [run.sh]
-            }
-            package "Back End" {
-              [Event-Driven Core]
-              [Model]
-            }
-            package "Controllers" {
-              [tcp-controller.js]
-              [http-controller.js]
-              [uart-controller.js]
-            }
-            "Controllers" --> "Back End" : control
+    rectangle "System Init" {
+        [project.service]
+    }
+
+    rectangle "Managment App" {
+        rectangle "Init" {
+            [run.sh]
+        }
+
+        rectangle "Back End" {
+            [Event-Driven Core]
+            [Model]
         }
     }
 
-    frame "Video" {
-        frame "Cameras" {
-            [Camera1]
-            [Camera2]
-            [Camera3]
-            [Camera4]
-        }
+    rectangle "Cameras" {
+        [Camera1]
+        [Camera2]
+        [Camera3]
+        [Camera4]
+    }
 
-        package "media-server" {
-            [MediaMTX]
-        }
+    rectangle "Video" {
+        [GStreamer Pipeline]
 
-        package "video" {
-            [GStreamer Pipeline]
-        }
-
-        package "video-processing" {
-            frame "preprocessing" {
+        rectangle "video-processing" {
+            rectangle "preprocessing" {
                 [Gstreamer Plugin 1]
             }
 
-            frame "postprocessing" {
+            rectangle "postprocessing" {
                 [Gstreamer Plugin 2]
+            }
+        }
+
+        rectangle "media-server" {
+            [MediaMTX]
+        }
+
+        "GStreamer Pipeline" --> "media-server"
+        "GStreamer Pipeline" --> "video-processing"
+
+    }
+
+    rectangle UI {
+        rectangle "Web" {
+            rectangle "web-server" {
+                [Nginx]
+            }
+
+            rectangle "Front End" {
+                [index.html]
+                [http-controller.js]
+            }
+        }
+
+        rectangle "TCP/UDP" {
+            rectangle "tcp-server" {
+                [TCP Server]
+            }
+            rectangle "udp-server" {
+                [UDP Server]
             }
         }
     }
 
-    package "Web" {
-        frame "web-server" {
-            [Nginx]
-        }
-        frame "Front End (View)" {
-            [index.html]
-        }
-    }
-
+    "System Init" --> "Managment App"
+    "Managment App" --> "Video" : control
+    "Video" <--> "Cameras" : control/stream
+    "media-server" --> "UI" : stream
+    "UI" --> "Back End" : socket/gRPC
 }
 
 node "User PC" {
-    package "Web Browser" {
-        frame "Project Sensor Web Portal" {
+    rectangle "Web Browser" {
+        rectangle "Project Sensor Web Portal" {
             [Camera Stream 1]
             [Camera Stream 2]
             [Camera Stream 3]
             [Camera Stream 4]
         }
     }
-    package "Media Client" {
+
+    rectangle "Application" {
+        [TCP Client]
+        [UDP Client]
         [RTSP Camera Stream 1]
         [RTSP Camera Stream 2]
         [RTSP Camera Stream 3]
@@ -77,16 +99,13 @@ node "User PC" {
     }
 }
 
-"Project Sensor Web Portal" <--> "Front End (View)"
-"web-server" --> "Controllers"
-"Front End (View)" --> "web-server"
-"Back End" --> "video" : control
-"media-server" --> "Front End (View)" : stream
-"media-server" --> "Media Client" : stream
-"video" --> "Cameras" : control
-"video" --> "video-processing"  : control
-"video" --> "media-server" : stream
-"Managment App" --> "media-server" : control
-"Managment App" --> "web-server" : control
+"User PC" <--> "UI" : control/stream
+
+note as Notes
+    **Architecture Notes**
+    - MVC architecture:
+        index.html -> http-controller.js -> Back End
+
+end note
 
 @enduml
