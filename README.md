@@ -12,7 +12,7 @@
 
 ```bash
 cd ~
-git clone https://github.com/shalex88/project project --recurse-submodules
+git clone https://github.com/shalex88/project project -b develop --recurse-submodules
 cd ~/project
 ./install.sh
 ```
