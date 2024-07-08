@@ -7,10 +7,10 @@ install_nvidia_jetpack() {
 
 install_dependencies() {
     ./web-server/install.sh
-    ./media-server/install.sh
+    ./video/media-server/install.sh
     ./video/install.sh
     ./app/install.sh
-    ./video-processing/install.sh
+    ./video/video-processing/install.sh
     install_nvidia_jetpack
 }
 

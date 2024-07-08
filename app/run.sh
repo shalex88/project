@@ -5,19 +5,19 @@ PROJECT_DIR=$(dirname $SCRIPT_DIR)
 
 run_web_server() {
     echo "Starting web server..."
-    $PROJECT_DIR/web-server/run.sh start
+    $PROJECT_DIR/ui/web-server/run.sh start
     echo "Starting web server... Done!"
 }
 
 stop_web_server() {
     echo "Stopping web server..."
-    $PROJECT_DIR/web-server/run.sh stop
+    $PROJECT_DIR/ui/web-server/run.sh stop
     echo "Stopping web server... Done!"
 }
 
 run_media_server() {
     echo "Starting video server..."
-    $PROJECT_DIR/media-server/run.sh
+    $PROJECT_DIR/video/media-server/run.sh
 }
 
 start_video_stream() {

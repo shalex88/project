@@ -24,7 +24,10 @@ node "Project Sensor" {
 
     frame "Video" {
         frame "Cameras" {
-            [Camera]
+            [Camera1]
+            [Camera2]
+            [Camera3]
+            [Camera4]
         }
 
         package "media-server" {
@@ -60,11 +63,17 @@ node "Project Sensor" {
 node "User PC" {
     package "Web Browser" {
         frame "Project Sensor Web Portal" {
-            [Camera Stream]
+            [Camera Stream 1]
+            [Camera Stream 2]
+            [Camera Stream 3]
+            [Camera Stream 4]
         }
     }
     package "Media Client" {
-        [RTSP Camera Stream]
+        [RTSP Camera Stream 1]
+        [RTSP Camera Stream 2]
+        [RTSP Camera Stream 3]
+        [RTSP Camera Stream 4]
     }
 }
 

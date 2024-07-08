@@ -1,9 +1,9 @@
 [submodule "web-server"]
-	path = web-server
+	path = ui/web-server
 	url = https://github.com/shalex88/nginx-example.git
 [submodule "media-server"]
-	path = media-server
+	path = video/media-server
 	url = https://github.com/shalex88/janus-example.git
 [submodule "video-processing"]
-	path = video-processing
+	path = video/video-processing
 	url = https://github.com/shalex88/gst-plugins-python

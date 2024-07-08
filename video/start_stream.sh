@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 usage()
 {
     echo "usage: $(basename "$0") [CAMERA_ID] [RUN] [PREPROCESSING] [POSTPROCESSING]"
@@ -14,8 +16,9 @@ usage()
 
 # Function to start the stream
 start_stream() {
-    export GST_PLUGIN_PATH="/home/$USER/project/video-processing"
+    export GST_PLUGIN_PATH="$SCRIPT_DIR/video-processing"
     camera=$1
+    camera_device="/dev/video"$((camera - 1))""
     if [ "$2" = "true" ]; then
         preprocessing="! preprocessing"
     fi
