@@ -6,7 +6,6 @@ install_autorun_service() {
     sudo cp $SCRIPT_DIR/project.service /etc/systemd/system/project.service
     sudo systemctl daemon-reload
     sudo systemctl enable project
-    sudo systemctl start project
 }
 
 install_autorun_service
