@@ -21,29 +21,38 @@ start_stream() {
 
     echo "Starting Camera$camera..."
 
-    if [ "$2" = "true" ]; then
-        preprocessing="! preprocessing"
-    fi
-    if [ "$3" = "true" ]; then
-        postprocessing="! postprocessing"
-    fi
-
-    if [ "$camera" == "1" ]; then
-        device_id="0"
-    elif [ "$camera" == "2" ]; then
-        device_id="2"
-    elif [ "$camera" == "3" ]; then
-        device_id="4"
-    elif [ "$camera" == "4" ]; then
-        device_id="6"
-    fi
-
-    temp_src_element="v4l2src device=/dev/video$device_id ! image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec ! nvvidconv ! video/x-raw,format=YUY2"
-    real_src_element="v4lsrc device="/dev/video$device_id" ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
     test_src_element="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
+    overlay="textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right"
 
-    streaming_pipeline="$test_src_element ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
-    gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
+    if [ "$TARGET" == "ORIN" ]; then
+        if [ "$2" = "true" ]; then
+        preprocessing="! preprocessing"
+        fi
+
+        if [ "$3" = "true" ]; then
+            postprocessing="! postprocessing"
+        fi
+
+        if [ "$camera" == "1" ]; then
+            device_id="0"
+        elif [ "$camera" == "2" ]; then
+            device_id="2"
+        elif [ "$camera" == "3" ]; then
+            device_id="4"
+        elif [ "$camera" == "4" ]; then
+            device_id="6"
+        fi
+
+        cam_src_element="v4lsrc device=/dev/video$device_id ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
+        # temp_src_element="v4l2src device=/dev/video$device_id ! image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec ! nvvidconv ! video/x-raw,format=YUY2"
+        src_element=$cam_src_element
+        streaming_pipeline="$src_element ! $overlay $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    else
+        src_element=$test_src_element
+        streaming_pipeline="$src_element ! $overlay ! autovideoconvert ! openh264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    fi
+
+    gst-launch-1.0 -v "$streaming_pipeline" > /dev/null &
     echo $! > /tmp/gst_pipeline_$camera.pid
 
     #FIXME: not working properly, gives false success indication
@@ -59,10 +68,11 @@ start_stream() {
 
 # Function to stop the stream
 stop_stream() {
-    if [ -f /tmp/gst_pipeline_$1.pid ]; then
+    camera=$1
+    if [ -f /tmp/gst_pipeline_$camera.pid ]; then
         # Kill the specific GStreamer pipeline process
-        kill $(cat /tmp/gst_pipeline_$1.pid) > /dev/null 2>&1
-        rm /tmp/gst_pipeline_$1.pid
+        kill "$(cat /tmp/gst_pipeline_$camera.pid)" > /dev/null 2>&1
+        rm /tmp/gst_pipeline_$camera.pid
         echo "Camera$1 stopped"
     else
         echo "Camera$1 is not running"
