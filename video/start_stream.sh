@@ -18,7 +18,9 @@ usage()
 start_stream() {
     export GST_PLUGIN_PATH="$SCRIPT_DIR/video-processing"
     camera=$1
-    camera_device="/dev/video"$((camera - 1))""
+
+    echo "Starting Camera$camera..."
+
     if [ "$2" = "true" ]; then
         preprocessing="! preprocessing"
     fi
@@ -26,22 +28,42 @@ start_stream() {
         postprocessing="! postprocessing"
     fi
 
-    echo "Starting Camera$camera..."
+    if [ "$camera" == "1" ]; then
+        device_id="0"
+    elif [ "$camera" == "2" ]; then
+        device_id="2"
+    elif [ "$camera" == "3" ]; then
+        device_id="4"
+    elif [ "$camera" == "4" ]; then
+        device_id="6"
+    fi
 
-    pipeline="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2 ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
-    gst-launch-1.0 -v $pipeline > /dev/null 2>&1 &
+    temp_src_element="v4l2src device=/dev/video$device_id ! image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec ! nvvidconv ! video/x-raw,format=YUY2"
+    real_src_element="v4lsrc device="/dev/video$device_id" ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
+    test_src_element="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
 
-    # Save the process ID of the pipeline
-    echo $! > /tmp/gst_pipeline_$1.pid
+    streaming_pipeline="$test_src_element ! textoverlay text="Camera$camera" $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
+    echo $! > /tmp/gst_pipeline_$camera.pid
+
+    #FIXME: not working properly, gives false success indication
+    sleep 2
+    pid=$(cat /tmp/gst_pipeline_$camera.pid)
+    if ps -p $pid > /dev/null; then
+        echo "Camera$camera success"
+    else
+        echo "Camera$camera failed"
+        rm /tmp/gst_pipeline_$camera.pid
+    fi
 }
 
 # Function to stop the stream
 stop_stream() {
     if [ -f /tmp/gst_pipeline_$1.pid ]; then
-        echo "Stopping Camera$1..."
         # Kill the specific GStreamer pipeline process
         kill $(cat /tmp/gst_pipeline_$1.pid) > /dev/null 2>&1
         rm /tmp/gst_pipeline_$1.pid
+        echo "Camera$1 stopped"
     else
         echo "Camera$1 is not running"
     fi
