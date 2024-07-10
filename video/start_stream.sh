@@ -26,7 +26,7 @@ start_stream() {
 
     if [ "$TARGET" == "ORIN" ]; then
         if [ "$2" = "true" ]; then
-        preprocessing="! preprocessing"
+            preprocessing="! preprocessing"
         fi
 
         if [ "$3" = "true" ]; then
@@ -43,16 +43,14 @@ start_stream() {
             device_id="6"
         fi
 
-        cam_src_element="v4lsrc device=/dev/video$device_id ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
-        # temp_src_element="v4l2src device=/dev/video$device_id ! image/jpeg,width=1920,height=1080,framerate=30/1 ! jpegdec ! nvvidconv ! video/x-raw,format=YUY2"
-        src_element=$cam_src_element
-        streaming_pipeline="$src_element ! $overlay $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        cam_src_element="v4l2src device=/dev/video$device_id ! video/x-raw,width=1920,height=1080,framerate=30/1,format=UYVY"
+        temp_src_element="v4l2src device=/dev/video$device_id ! image/jpeg,width=640,height=480,framerate=30/1 ! jpegdec ! nvvidconv ! video/x-raw,format=UYVY"
+        streaming_pipeline="$cam_src_element ! $overlay $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     else
-        src_element=$test_src_element
-        streaming_pipeline="$src_element ! $overlay ! autovideoconvert ! openh264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        streaming_pipeline="$test_src_element ! $overlay ! autovideoconvert ! openh264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     fi
 
-    gst-launch-1.0 -v "$streaming_pipeline" > /dev/null &
+    gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
     echo $! > /tmp/gst_pipeline_$camera.pid
 
     #FIXME: not working properly, gives false success indication
