@@ -32,5 +32,4 @@ install_dependencies() {
 }
 
 set_target_env
-echo "Running on $TARGET $ARCH"
 install_dependencies
