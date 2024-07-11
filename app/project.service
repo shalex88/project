@@ -4,7 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash /home/user/project/app/run.sh
+#FIXME: remove hardcoded username
+ExecStart=/bin/bash -c '/home/user/project/app/run.sh > /home/user/project/log/log.log 2>&1'
 Restart=on-abort
 
 [Install]
