@@ -21,7 +21,7 @@ start_stream() {
 
     echo "Starting Camera$camera..."
 
-    test_src_element="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=25/1,format=YUY2"
+    test_src_element="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=30/1,format=YUY2"
     overlay="textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right"
 
     if [ "$TARGET" == "ORIN" ]; then

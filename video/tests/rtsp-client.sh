@@ -10,8 +10,7 @@ start_stream() {
     port=$2
     echo "Starting the stream..."
     # GStreamer pipeline
-    #TODO: Change the pipeline to match your camera settings and receive camera ID as an argument
-    pipeline="rtspsrc location=rtsp://172.25.125.18:8554/stream$camera ! rtph265depay ! h264parse ! libde264dec ! fpsdisplaysink sync=false"
+    pipeline="rtspsrc location=rtsp://172.25.125.18:8554/stream$camera ! rtph265depay ! h264parse ! openh264dec ! fpsdisplaysink sync=false"
     # Run the GStreamer pipeline in the background and redirect the output to /dev/null
     gst-launch-1.0 -v $pipeline > /dev/null 2>&1 &
     # Save the process ID of the pipeline
