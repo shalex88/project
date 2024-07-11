@@ -53,14 +53,23 @@ start_stream() {
     gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
     echo $! > /tmp/gst_pipeline_$camera.pid
 
-    #FIXME: not working properly, gives false success indication
     sleep 2
     pid=$(cat /tmp/gst_pipeline_$camera.pid)
     if ps -p $pid > /dev/null; then
         echo "Camera$camera success"
     else
-        echo "Camera$camera failed"
-        rm /tmp/gst_pipeline_$camera.pid
+        echo "Camera$camera failed, showing test pattern..."
+        # streaming_pipeline="$test_src_element ! $overlay ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        streaming_pipeline="$test_src_element ! $overlay ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
+        echo $! > /tmp/gst_pipeline_$camera.pid
+        sleep 2
+
+        pid=$(cat /tmp/gst_pipeline_$camera.pid)
+        if ! ps -p $pid > /dev/null; then
+            echo "Test pattern failed..."
+            rm /tmp/gst_pipeline_$camera.pid
+        fi
     fi
 }
 
