@@ -19,6 +19,10 @@ set_target_env() {
     export ARCH=$arch
 }
 
+system_configure() {
+    sudo jetson_clocks
+}
+
 clean() {
     stop_video_stream
     stop_web_server
@@ -54,6 +58,7 @@ stop_video_stream() {
 }
 
 set_target_env
+system_configure
 clean
 
 run_web_server
