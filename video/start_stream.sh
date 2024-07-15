@@ -21,9 +21,6 @@ start_stream() {
 
     echo "Starting Camera$camera..."
 
-    test_src_element="videotestsrc ! video/x-raw,width=1920,height=1080,framerate=30/1,format=YUY2"
-    overlay="textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right"
-
     if [ "$TARGET" == "ORIN" ]; then
         if [ "$2" = "true" ]; then
             preprocessing="! preprocessing"
@@ -43,11 +40,18 @@ start_stream() {
             device_id="6"
         fi
 
-        cam_src_element="v4l2src device=/dev/video$device_id ! video/x-raw,width=1920,height=1080,framerate=30/1,format=UYVY"
-        temp_src_element="v4l2src device=/dev/video$device_id ! image/jpeg,width=640,height=480,framerate=30/1 ! jpegdec ! nvvidconv ! video/x-raw,format=UYVY"
-        streaming_pipeline="$cam_src_element ! $overlay $preprocessing $postprocessing ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        cam_src_element="v4l2src device=/dev/video$device_id ! $encoder_input_resolution,format=UYVY"
+        input_src_resolution="width=1920,height=1080,framerate=25/1"
+        encoder_input_resolution="width=3840,height=2160,framerate=25/1"
+        test_src_element="videotestsrc ! video/x-raw,$input_src_resolution,format=UYVY"
+        overlay="textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right $preprocessing $postprocessing"
+        nvh264encoding="nvvidconv ! video/x-raw(memory:NVMM),$encoder_input_resolution,format=NV12 ! nvv4l2h264enc ! h264parse config-interval=-1"
+        swh264encoding="autovideoconvert ! openh264enc ! h264parse config-interval=-1"
+        nvh265encoding="nvvidconv ! video/x-raw(memory:NVMM),$encoder_input_resolution,format=NV12 ! nvv4l2h265enc ! h265parse config-interval=-1"
+        swh265encoding="autovideoconvert ! x265enc ! h264parse config-interval=-1"
+        streaming_pipeline="$cam_src_element ! $overlay ! $nvh264encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     else
-        streaming_pipeline="$test_src_element ! $overlay ! autovideoconvert ! openh264enc ! h264parse ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        streaming_pipeline="$test_src_element ! $overlay ! $swh265encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     fi
 
     gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
@@ -59,9 +63,8 @@ start_stream() {
         echo "Camera$camera success"
     else
         echo "Camera$camera failed, showing test pattern..."
-        # streaming_pipeline="$test_src_element ! $overlay ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
-        streaming_pipeline="$test_src_element ! $overlay ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
-        gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
+        streaming_pipeline="$test_src_element ! $overlay ! $nvh264encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        gst-launch-1.0 -v $streaming_pipeline > /dev/null &
         echo $! > /tmp/gst_pipeline_$camera.pid
         sleep 2
 
@@ -144,3 +147,5 @@ case "$2" in
         exit 1
         ;;
 esac
+
+# gst-launch-1.0 videotestsrc ! video/x-raw,width=1920,height=1080,framerate=30/1,format=UYVY ! textoverlay text="CAM1" valignment=top halignment=left ! timeoverlay valignment=top halignment=right ! nvvidconv ! nvv4l2h264enc ! h264parse config-interval=-1 ! rtspclientsink location=rtsp://localhost:8554/stream1
