@@ -1,0 +1,111 @@
+@startuml project-sensor
+'https://plantuml.com/component-diagram
+
+left to right direction
+
+title Project Sensor SW Architecture
+
+node "Project Sensor" {
+    rectangle "System Init" {
+        [project.service]
+    }
+
+    rectangle "Managment App" {
+        rectangle "Init" {
+            [run.sh]
+        }
+
+        rectangle "Back End" {
+            [Event-Driven Core]
+            [Model]
+        }
+    }
+
+    rectangle "Cameras" {
+        [Camera1]
+        [Camera2]
+        [Camera3]
+        [Camera4]
+    }
+
+    rectangle "Video" {
+        [GStreamer Pipeline]
+
+        rectangle "video-processing" {
+            rectangle "preprocessing" {
+                [Gstreamer Plugin 1]
+            }
+
+            rectangle "postprocessing" {
+                [Gstreamer Plugin 2]
+            }
+        }
+
+        rectangle "media-server" {
+            [MediaMTX]
+        }
+
+        "GStreamer Pipeline" --> "media-server"
+        "GStreamer Pipeline" --> "video-processing"
+
+    }
+
+    rectangle UI {
+        rectangle "Web" {
+            rectangle "web-server" {
+                [Nginx]
+            }
+
+            rectangle "Front End" {
+                [index.html]
+                [http-controller.js]
+            }
+        }
+
+        rectangle "TCP/UDP" {
+            rectangle "tcp-server" {
+                [TCP Server]
+            }
+            rectangle "udp-server" {
+                [UDP Server]
+            }
+        }
+    }
+
+    "System Init" --> "Managment App"
+    "Managment App" --> "Video" : control
+    "Video" <--> "Cameras" : control/stream
+    "media-server" --> "UI" : stream
+    "UI" --> "Back End" : socket/gRPC
+}
+
+node "User PC" {
+    rectangle "Web Browser" {
+        rectangle "Project Sensor Web Portal" {
+            [Camera Stream 1]
+            [Camera Stream 2]
+            [Camera Stream 3]
+            [Camera Stream 4]
+        }
+    }
+
+    rectangle "Application" {
+        [TCP Client]
+        [UDP Client]
+        [RTSP Camera Stream 1]
+        [RTSP Camera Stream 2]
+        [RTSP Camera Stream 3]
+        [RTSP Camera Stream 4]
+    }
+}
+
+"User PC" <--> "UI" : control/stream
+
+note as Notes
+    **Architecture Notes**
+    - MVC architecture:
+        index.html -> http-controller.js -> Back End
+
+end note
+
+@enduml
