@@ -20,7 +20,9 @@ set_target_env() {
 }
 
 system_configure() {
-    sudo jetson_clocks
+    if [ "$TARGET" == "ORIN" ]; then
+        sudo jetson_clocks
+    fi
 }
 
 clean() {
