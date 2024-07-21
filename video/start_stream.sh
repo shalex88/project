@@ -45,7 +45,7 @@ start_stream() {
         input_src_resolution="width=1920,height=1080,$fps"
         encoder_input_resolution="width=3840,height=2160,$fps"
         cam_src_element="v4l2src device=/dev/video$device_id ! video/x-raw,$input_src_resolution,format=UYVY"
-        overlay="textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right $preprocessing $postprocessing"
+        overlay="textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right"
         test_src_element="videotestsrc ! video/x-raw,$input_src_resolution,format=UYVY"
         #################### Hailo #########################
         hailo="queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! videoscale qos=false n-threads=2 ! video/x-raw, pixel-aspect-ratio=1/1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! videoconvert n-threads=2 qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailonet hef-path=/media/fronti/NVMe/hailo_4.15.0/tappas/apps/h8/gstreamer/resources/hef/yolov5m_wo_spp_60p.hef batch-size=1 nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter function-name=yolov5 so-path=/media/fronti/NVMe/hailo_4.15.0/tappas/apps/h8/gstreamer/libs/post_processes//libyolo_hailortpp_post.so config-path=null qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailooverlay qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! videoconvert "
@@ -56,7 +56,7 @@ start_stream() {
         swh264encoding="autovideoconvert ! openh264enc ! h264parse config-interval=-1"
         nvh265encoding="nvvidconv ! video/x-raw(memory:NVMM),$encoder_input_resolution,format=NV12 ! nvv4l2h265enc ! h265parse config-interval=-1"
         swh265encoding="autovideoconvert ! x265enc ! h264parse config-interval=-1"
-        streaming_pipeline="$cam_src_element ! $overlay ! $nvh264encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
+        streaming_pipeline="$cam_src_element ! $overlay $preprocessing $postprocessing ! $nvh264encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     else
         streaming_pipeline="$test_src_element ! $swh264encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
     fi
@@ -71,7 +71,7 @@ start_stream() {
     else
         echo "Camera$camera failed, showing test pattern..."
         streaming_pipeline="$test_src_element ! $overlay ! $nvh264encoding ! rtspclientsink location=rtsp://localhost:8554/stream$camera"
-        gst-launch-1.0 -v $streaming_pipeline > /dev/null &
+        gst-launch-1.0 -v $streaming_pipeline > /dev/null 2>&1 &
         echo $! > /tmp/gst_pipeline_$camera.pid
         sleep 2
 
