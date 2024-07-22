@@ -1,111 +1,85 @@
 @startuml project-sensor
 'https://plantuml.com/component-diagram
 
-left to right direction
+skinparam componentStyle rectangle
 
 title Project Sensor SW Architecture
 
-node "Project Sensor" {
-    rectangle "System Init" {
-        [project.service]
-    }
-
-    rectangle "Managment App" {
-        rectangle "Init" {
-            [run.sh]
-        }
-
-        rectangle "Back End" {
-            [Event-Driven Core]
-            [Model]
-        }
-    }
-
-    rectangle "Cameras" {
-        [Camera1]
-        [Camera2]
-        [Camera3]
-        [Camera4]
-    }
-
-    rectangle "Video" {
-        [GStreamer Pipeline]
-
-        rectangle "video-processing" {
-            rectangle "preprocessing" {
-                [Gstreamer Plugin 1]
-            }
-
-            rectangle "postprocessing" {
-                [Gstreamer Plugin 2]
-            }
-        }
-
-        rectangle "media-server" {
-            [MediaMTX]
-        }
-
-        "GStreamer Pipeline" --> "media-server"
-        "GStreamer Pipeline" --> "video-processing"
-
-    }
-
-    rectangle UI {
-        rectangle "Web" {
-            rectangle "web-server" {
-                [Nginx]
-            }
-
-            rectangle "Front End" {
-                [index.html]
-                [http-controller.js]
-            }
-        }
-
-        rectangle "TCP/UDP" {
-            rectangle "tcp-server" {
-                [TCP Server]
-            }
-            rectangle "udp-server" {
-                [UDP Server]
-            }
-        }
-    }
-
-    "System Init" --> "Managment App"
-    "Managment App" --> "Video" : control
-    "Video" <--> "Cameras" : control/stream
-    "media-server" --> "UI" : stream
-    "UI" --> "Back End" : socket/gRPC
-}
-
 node "User PC" {
-    rectangle "Web Browser" {
-        rectangle "Project Sensor Web Portal" {
-            [Camera Stream 1]
-            [Camera Stream 2]
-            [Camera Stream 3]
-            [Camera Stream 4]
-        }
-    }
-
-    rectangle "Application" {
-        [TCP Client]
-        [UDP Client]
-        [RTSP Camera Stream 1]
-        [RTSP Camera Stream 2]
-        [RTSP Camera Stream 3]
-        [RTSP Camera Stream 4]
-    }
+    [Project Sensor Web Portal]
+    [Application]
 }
 
-"User PC" <--> "UI" : control/stream
+skinparam actorStyle awesome
+actor User
 
-note as Notes
-    **Architecture Notes**
-    - MVC architecture:
-        index.html -> http-controller.js -> Back End
+User -down- "Project Sensor Web Portal"
+User -down- "Application"
 
-end note
+node "Project Sensor" {
+    package "MVP Architecture" #line.dashed {
+        package "Model" #line.dashed {
+            package "Event-Driven Architecture" #line.dashed {
+                ()IntSocket as "Socket/gRPC"
+                [Event Manager] -up- IntSocket
+                [Back-End] -up- [Event Manager] : dispatch events
+            }
+        }
+
+        package "View" #line.dashed {
+            [Web Page]
+        }
+
+        ()ExtSocket as "TCP/UDP Socket"
+
+        package "Presenters" #line.dashed {
+            [Web Server]
+            [Media Server]
+            [TCP/UDP Server]
+        }
+
+        "Web Server" -down- IntSocket
+        "TCP/UDP Server" -down- IntSocket
+
+        "TCP/UDP Server" -up- ExtSocket
+        "Web Server" -up- "Web Page"
+        "Media Server" -up- "Web Page"
+        "Media Server" -up- ExtSocket
+    }
+
+    [project.service]
+
+    package "Cameras" {
+        [1]
+        [2]
+        [3]
+        [4]
+    }
+
+    package "Video" {
+        [Video Pipeline]
+
+        package "video-processing" {
+            component "preprocessing" {
+                [Video Plugin 1]
+            }
+
+            component "postprocessing" {
+                [Video Plugin 2]
+            }
+        }
+
+        "Video Pipeline" -- "video-processing"
+
+    }
+
+    "Video Pipeline" -down- "Cameras"
+    "Back-End" -down- "Cameras"
+    "Back-End" -down- "Video Pipeline"
+    "Media Server" -down- "Video Pipeline"
+}
+
+"Web Page" -up- "Project Sensor Web Portal"
+ExtSocket -up- "Application"
 
 @enduml
