@@ -8,6 +8,7 @@ set_target_env() {
         model=$(tr -d '\0' < /proc/device-tree/model)
         if [[ $model == *"Orin"* ]]; then
             target="ORIN"
+            arch=arm64
         fi
     fi
 

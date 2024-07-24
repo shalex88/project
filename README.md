@@ -8,11 +8,15 @@
 
 ![Architecture](docs/architecture.png)
 
+## Prerequisites
+
+NVIDIA Jetson AGX Orin with JetPack 6.0 (L4T 36.3)
+
 ## Install
 
 ```bash
 cd ~
-git clone https://github.com/shalex88/project project -b develop --recurse-submodules
+git clone https://github.com/shalex88/project --recurse-submodules
 cd ~/project
 ./install.sh
 ```

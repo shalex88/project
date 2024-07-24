@@ -11,6 +11,7 @@ set_target_env() {
         model=$(tr -d '\0' < /proc/device-tree/model)
         if [[ $model == *"Orin"* ]]; then
             target="ORIN"
+            arch=arm64
         fi
     fi
 
@@ -21,6 +22,7 @@ set_target_env() {
 
 system_configure() {
     if [ "$TARGET" == "ORIN" ]; then
+        sudo nvpmodel -m 0
         sudo jetson_clocks
     fi
 }
