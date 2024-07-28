@@ -11,6 +11,8 @@
 ## Prerequisites
 
 NVIDIA Jetson AGX Orin with JetPack 6.0 (L4T 36.3)
+or
+Ubuntu 22.04 for x86_64
 
 ## Install
 
@@ -24,16 +26,11 @@ cd ~/project
 ## Run
 
 ```bash
+# Enable debug prints
+export DEBUG=1
+
 # Start
-sudo systemctl start project
-# Restart
-sudo systemctl restart project
-# Stop
-sudo systemctl stop project
-# Enable autorun
-sudo systemctl enable project
-# Disable autorun
-sudo systemctl disable project
+~/project/app/run.sh
 
 ```
 
