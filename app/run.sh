@@ -6,6 +6,9 @@ PROJECT_DIR=$(dirname $SCRIPT_DIR)
 set_target_env() {
     target="Unknown"
     arch=$(uname -m)
+    if [ "$arch" == "x86_64" ]; then
+        arch="amd64"
+    fi
 
     if [ -e "/proc/device-tree/model" ]; then
         model=$(tr -d '\0' < /proc/device-tree/model)

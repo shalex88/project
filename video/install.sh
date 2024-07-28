@@ -22,9 +22,8 @@ install_dependencies() {
     if [ "$TARGET" == "ORIN" ]; then
         sudo apt-get install -y nvidia-l4t-gstreamer
         $SCRIPT_DIR/video-processing/install.sh
+        install_deepstream
     fi
-
-    install_deepstream
 }
 
-install_deepstream
+install_dependencies
