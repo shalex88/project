@@ -3,7 +3,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 debug_print() {
-    if [ "$DEBUG" -eq 1 ]; then
+    if [ -n "$DEBUG" ]; then
         echo "$1"
     fi
 }
@@ -25,6 +25,7 @@ start_stream() {
     export GST_PLUGIN_PATH+="$SCRIPT_DIR/video-processing"
     camera=$1
 
+    stop_stream $camera
     echo "Starting Camera$camera..."
 
     if [ "$2" = "true" ]; then
@@ -76,7 +77,7 @@ start_stream() {
     out_resolution="$max_out_resolution"
 
     nvh264_enc="nvvidconv ! $ecoder_format $out_resolution ! nvv4l2h264enc ! h264parse"
-    swh264_enc="autovideoconvert ! openh264enc ! h264parse"
+    swh264_enc="autovideoconvert ! x264enc ! h264parse"
     nvh265_enc="nvvidconv ! $ecoder_format $out_resolution ! nvv4l2h265enc ! h265parse"
     swh265_enc="autovideoconvert ! x265enc ! h264parse"
 
@@ -87,7 +88,11 @@ start_stream() {
     source=$cam_src_element
     overlay=$cam_overlay
     video_processing=$multiple_video_processing
-    encoder=$nvh264_enc
+    if [ "$TARGET" == "ORIN" ]; then
+        encoder=$nvh264_enc
+    else
+        encoder=$swh264_enc
+    fi
     sink=$rtspclientsink
 
     streaming_pipeline="$source $overlay $video_processing ! $encoder ! $sink"
@@ -106,7 +111,6 @@ start_stream() {
     else
         echo "Camera$camera failed, showing test pattern..."
         source=$test_src_element
-        encoder=$swh264_enc
         streaming_pipeline="$source $overlay ! $encoder ! $sink"
         debug_print "gst-launch-1.0 -v $streaming_pipeline"
         gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
