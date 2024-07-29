@@ -52,13 +52,13 @@ start_stream() {
     fps="framerate=30/1"
     hd_in_resolution=",width=1920,height=1080,$fps"
     no_in_resolution=""
-    in_resolution=$hd_in_resolution
+    in_resolution=$no_in_resolution
 
     # Sources
     cam_src_element="v4l2src device=/dev/video$device_id ! $in_format $in_resolution "
     test_src_element="videotestsrc ! $in_format $in_resolution "
     hailo_src_element="videotestsrc pattern="ball" ! $in_format $in_resolution "
-    movie_file="pedestrians.mp4"
+    movie_file="t3_high_long.mp4"
     movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$movie_file ! decodebin ! autovideoconvert"
 
     # Video processing
@@ -74,7 +74,7 @@ start_stream() {
     ecoder_format="video/x-raw(memory:NVMM),format=NV12"
     max_out_resolution=",width=3840,height=2160,$fps"
     no_out_resolution=""
-    out_resolution="$max_out_resolution"
+    out_resolution="$no_out_resolution"
 
     nvh264_enc="nvvidconv ! $ecoder_format $out_resolution ! nvv4l2h264enc ! h264parse"
     swh264_enc="autovideoconvert ! x264enc ! h264parse"
@@ -85,8 +85,8 @@ start_stream() {
     rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$camera"
 
     # Final pipeline
-    source=$cam_src_element
-    overlay=$cam_overlay
+    source=$movie_src_element
+    overlay=$no_overlay
     video_processing=$multiple_video_processing
     if [ "$TARGET" == "ORIN" ]; then
         encoder=$nvh264_enc
