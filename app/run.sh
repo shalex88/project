@@ -54,13 +54,13 @@ run_media_server() {
 
 start_video_stream() {
     echo "Starting video streams..."
-    $PROJECT_DIR/video/start_stream.sh all start
+    $PROJECT_DIR/video/video-stream start camera all
     echo "Starting video streams... Done!"
 }
 
 stop_video_stream() {
     echo "Stopping video streams..."
-    $PROJECT_DIR/video/start_stream.sh all stop
+    $PROJECT_DIR/video/video-stream stop camera all
     echo "Stopping video streams... Done!"
 }
 

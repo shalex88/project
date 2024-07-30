@@ -9,60 +9,73 @@ debug_print() {
 }
 
 usage() {
-    echo "usage: $(basename "$0") [CAMERA_ID] [RUN] [PREPROCESSING] [POSTPROCESSING]"
-    echo "CAMERA_ID <1|2|..|all> - template project language"
-    echo "RUN <start|stop> - template project language"
+    echo "usage: $(basename "$0") [ACTION] [SOURCE] [ID] [PREPROCESSING] [POSTPROCESSING]"
+    echo "ACTION <start|stop> - template project language"
+    echo "SOURCE <camera|file> - video source"
+    echo "ID <1|2|..|all|movie.mp4> - camera id, all cameras or movie file name"
     echo "PREPROCESSING <true|false> - custom preprocessing element"
     echo "POSTPROCESSING <true|false> - custom postprocessing element"
     echo "example:"
-    echo "./$(basename "$0") all start true true"
-    echo "./$(basename "$0") all stop"
+    echo "./$(basename "$0") start camera 1 true true"
+    echo "./$(basename "$0") stop camera all"
+    echo "./$(basename "$0") start file movie.mp4 true true"
 }
 
 # Function to start the stream
 start_stream() {
     [[ -s /home/fronti/.hailo/tappas/tappas_env ]] && . /home/fronti/.hailo/tappas/tappas_env
     export GST_PLUGIN_PATH+="$SCRIPT_DIR/video-processing"
-    camera=$1
+    type=$1
+    id=$2
+    stream_id=$id
 
-    stop_stream $camera
-    echo "Starting Camera$camera..."
-
-    if [ "$2" = "true" ]; then
+    if [ "$3" = "true" ]; then
         preprocessing="! preprocessing"
     fi
 
-    if [ "$3" = "true" ]; then
+    if [ "$4" = "true" ]; then
         postprocessing="! postprocessing"
     fi
 
-    if [ "$camera" == "1" ]; then
-        device_id="0"
-    elif [ "$camera" == "2" ]; then
-        device_id="2"
-    elif [ "$camera" == "3" ]; then
-        device_id="4"
-    elif [ "$camera" == "4" ]; then
-        device_id="6"
+    if [ "$type" == "camera" ]; then
+        if [ "$id" == "1" ]; then
+            device_id="0"
+        elif [ "$id" == "2" ]; then
+            device_id="2"
+        elif [ "$id" == "3" ]; then
+            device_id="4"
+        elif [ "$id" == "4" ]; then
+            device_id="6"
+        fi
     fi
+
+    if [ "$type" == "file" ]; then
+        stream_id=0
+    fi
+
+    stop_stream $type $id
+    echo "Starting $type $id..."
 
     # Stream settings
     in_format="video/x-raw,format=UYVY"
-
     fps="framerate=30/1"
     hd_in_resolution=",width=1920,height=1080,$fps"
     no_in_resolution=""
-    in_resolution=$no_in_resolution
+
+    if [ "$type" == "camera" ]; then
+        in_resolution=$hd_in_resolution
+    elif [ "$type" == "file" ]; then
+        in_resolution=$no_in_resolution
+    fi
 
     # Sources
     cam_src_element="v4l2src device=/dev/video$device_id ! $in_format $in_resolution "
     test_src_element="videotestsrc ! $in_format $in_resolution "
     hailo_src_element="videotestsrc pattern="ball" ! $in_format $in_resolution "
-    movie_file="t3_high_long.mp4"
-    movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$movie_file ! decodebin ! autovideoconvert"
+    movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$id ! decodebin ! autovideoconvert"
 
     # Video processing
-    cam_overlay="! textoverlay text="CAM$camera" valignment=top halignment=left ! timeoverlay valignment=top halignment=right"
+    cam_overlay="! textoverlay text="CAM$id" valignment=top halignment=left ! timeoverlay valignment=top halignment=right"
     no_overlay=""
 
     # Video processing
@@ -82,11 +95,17 @@ start_stream() {
     swh265_enc="autovideoconvert ! x265enc ! h264parse"
 
     # Sinks
-    rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$camera"
+    rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$stream_id"
 
     # Final pipeline
-    source=$movie_src_element
-    overlay=$no_overlay
+    if [ "$type" == "camera" ]; then
+        source=$cam_src_element
+        overlay=$cam_overlay
+    elif [ "$type" == "file" ]; then
+        source=$movie_src_element
+        overlay=$no_overlay
+    fi
+
     video_processing=$multiple_video_processing
     if [ "$TARGET" == "ORIN" ]; then
         encoder=$nvh264_enc
@@ -101,96 +120,61 @@ start_stream() {
 
     # Play
     gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
-    echo $! > /tmp/gst_pipeline_$camera.pid
+    echo $! > /tmp/gst_pipeline_$id.pid
 
     # Check if the pipeline is running
     sleep 2
-    pid=$(cat /tmp/gst_pipeline_$camera.pid)
+    pid=$(cat /tmp/gst_pipeline_$id.pid)
     if ps -p $pid > /dev/null; then
-        echo "Camera$camera success"
+        echo "$type $id success"
     else
-        echo "Camera$camera failed, showing test pattern..."
+        echo "$type $id failed, showing test pattern..."
         source=$test_src_element
         streaming_pipeline="$source $overlay ! $encoder ! $sink"
         debug_print "gst-launch-1.0 -v $streaming_pipeline"
         gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
-        echo $! > /tmp/gst_pipeline_$camera.pid
+        echo $! > /tmp/gst_pipeline_$id.pid
         sleep 2
 
-        pid=$(cat /tmp/gst_pipeline_$camera.pid)
+        pid=$(cat /tmp/gst_pipeline_$id.pid)
         if ! ps -p $pid > /dev/null; then
             echo "Test pattern failed..."
-            rm /tmp/gst_pipeline_$camera.pid
+            rm /tmp/gst_pipeline_$id.pid
         fi
     fi
 }
 
 stop_stream() {
-    camera=$1
-    if [ -f /tmp/gst_pipeline_$camera.pid ]; then
+    type=$1
+    id=$2
+    if [ -f /tmp/gst_pipeline_$id.pid ]; then
         # Kill the specific GStreamer pipeline process
-        kill "$(cat /tmp/gst_pipeline_$camera.pid)" > /dev/null 2>&1
-        rm /tmp/gst_pipeline_$camera.pid
-        echo "Camera$1 stopped"
+        kill "$(cat /tmp/gst_pipeline_$id.pid)" > /dev/null 2>&1
+        rm /tmp/gst_pipeline_$id.pid
+        echo "$type $id stopped"
     else
-        echo "Camera$1 is not running"
+        echo "$type $id is not running"
     fi
 }
 
-case "$2" in
+case "$1" in
     start)
-        case "$1" in
-            1)
-                start_stream $1 $3 $4
-                ;;
-            2)
-                start_stream $1 $3 $4
-                ;;
-            3)
-                start_stream $1 $3 $4
-                ;;
-            4)
-                start_stream $1 $3 $4
-                ;;
-            all)
-                start_stream 1 $3 $4
-                start_stream 2 $3 $4
-                start_stream 3 $3 $4
-                start_stream 4 $3 $4
-                ;;
-            *)
-                echo "Invalid camera ID."
-                usage
-                exit 1
-                ;;
-        esac
+        if [ "$2" == "camera" ] && [ "$3" == "all" ]; then
+            for i in {1..4}; do
+                start_stream $2 $i $4 $5
+            done
+        else
+            start_stream $2 $3 $4 $5
+        fi
         ;;
     stop)
-            case "$1" in
-            1)
-                stop_stream $1
-                ;;
-            2)
-                stop_stream $1
-                ;;
-            3)
-                stop_stream $1
-                ;;
-            4)
-                stop_stream $1
-                ;;
-            all)
-                stop_stream 1
-                stop_stream 2
-                stop_stream 3
-                stop_stream 4
-                ;;
-            *)
-                echo "Invalid camera ID."
-                usage
-                exit 1
-                ;;
-        esac
+        if [ "$2" == "camera" ] && [ "$3" == "all" ]; then
+            for i in {1..4}; do
+                stop_stream $2 $i
+            done
+        else
+            stop_stream $2 $3
+        fi
         ;;
     *)
         usage
