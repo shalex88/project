@@ -17,8 +17,9 @@ set_target_env() {
             arch=arm64
         fi
     fi
-
-    echo "Running on $target $arch"
+    
+    ip=$(hostname -I | cut -d' ' -f1)
+    echo "Running on $target $arch $ip"
     export TARGET=$target
     export ARCH=$arch
 }
