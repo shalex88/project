@@ -16,8 +16,11 @@ install_deepstream() {
 
 install_dependencies() {
     sudo apt-get install -y gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-        gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-rtsp \
-        python3-gst-1.0 gstreamer1.0-python3-plugin-loader
+        gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-rtsp python3-gst-1.0 \
+        gstreamer1.0-python3-plugin-loader libswresample-dev libavutil-dev libavutil56 libavcodec-dev \
+        libavcodec58 libavformat-dev libavformat58 libavfilter7 libde265-dev libde265-0 libx265-199 \
+        libx264-163 libvpx7 libmpeg2encpp-2.1-0 libmpeg2-4 libmpg123-0
+    rm -rf ~/.cache/gstreamer-1.0/
 
     if [ "$TARGET" == "ORIN" ]; then
         sudo apt-get install -y nvidia-l4t-gstreamer
