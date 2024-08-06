@@ -47,6 +47,7 @@ start_stream() {
         elif [ "$id" == "4" ]; then
             device_id="6"
         fi
+        cam_device="/dev/video$device_id"
     fi
 
     if [ "$type" == "file" ]; then
@@ -69,7 +70,7 @@ start_stream() {
     fi
 
     # Sources
-    cam_src_element="v4l2src device=/dev/video$device_id ! $in_format $in_resolution "
+    cam_src_element="v4l2src device=$cam_device ! $in_format $in_resolution "
     test_src_element="videotestsrc ! $in_format $in_resolution "
     hailo_src_element="videotestsrc pattern="ball" ! $in_format $in_resolution "
     movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$id ! decodebin ! autovideoconvert"
@@ -98,14 +99,6 @@ start_stream() {
     rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$stream_id"
 
     # Final pipeline
-    if [ "$type" == "camera" ]; then
-        source=$cam_src_element
-        overlay=$cam_overlay
-    elif [ "$type" == "file" ]; then
-        source=$movie_src_element
-        overlay=$no_overlay
-    fi
-
     video_processing=$multiple_video_processing
     if [ "$TARGET" == "ORIN" ]; then
         encoder=$nvh264_enc
@@ -113,6 +106,17 @@ start_stream() {
         encoder=$swh264_enc
     fi
     sink=$rtspclientsink
+
+    if [ "$type" == "file" ]; then
+        source=$movie_src_element
+        overlay=$no_overlay
+    elif [ "$type" == "camera" ] && [ -f "$cam_device" ]; then
+        source=$cam_src_element
+        overlay=$cam_overlay
+    else
+        stream_test_pattern
+        return 0
+    fi
 
     streaming_pipeline="$source $overlay $video_processing ! $encoder ! $sink"
 
@@ -128,19 +132,29 @@ start_stream() {
     if ps -p $pid > /dev/null; then
         echo "$type $id success"
     else
-        echo "$type $id failed, showing test pattern..."
-        source=$test_src_element
-        streaming_pipeline="$source $overlay ! $encoder ! $sink"
-        debug_print "gst-launch-1.0 -v $streaming_pipeline"
-        gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
-        echo $! > /tmp/gst_pipeline_$id.pid
-        sleep 2
+        stream_test_pattern
+        return 0
+    fi
+}
 
-        pid=$(cat /tmp/gst_pipeline_$id.pid)
-        if ! ps -p $pid > /dev/null; then
-            echo "Test pattern failed..."
-            rm /tmp/gst_pipeline_$id.pid
-        fi
+stream_test_pattern() {
+    echo "$type $id failed, showing test pattern"
+
+    source=$test_src_element
+    overlay=$cam_overlay
+    streaming_pipeline="$source $overlay ! $encoder ! $sink"
+    debug_print "gst-launch-1.0 -v $streaming_pipeline"
+
+    gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
+    echo $! > /tmp/gst_pipeline_$id.pid
+    sleep 2
+
+    pid=$(cat /tmp/gst_pipeline_$id.pid)
+    if ! ps -p $pid > /dev/null; then
+        echo "Test pattern failed"
+        rm /tmp/gst_pipeline_$id.pid
+    else
+        echo "Test pattern success"
     fi
 }
 
