@@ -12,26 +12,46 @@
 
 NVIDIA Jetson AGX Orin with JetPack 6.0 (L4T 36.3)
 or
-Ubuntu 22.04 for x86_64
+Docker intalled on host system
 
 ## Install
 
 ```bash
-cd ~
-git clone https://github.com/shalex88/project --recurse-submodules
-cd ~/project
-./install.sh
+# Install docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh && rm get-docker.sh
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker run hello-world
+
+# Install the project image
+docker pull shalex88/project
 ```
 
 ## Run
 
 ```bash
-# Enable debug prints
-export DEBUG=1
+docker run -it shalex88/project
+```
 
-# Start
-~/project/app/run.sh
+# Development
 
+## Install
+
+```bash
+cd ~
+git clone https://github.com/shalex88/project -b develop --recurse-submodules
+cd ~/project
+
+# Native
+./install.sh
+
+# Docker
+#TODO Use multiarch build
+docker build -t shalex88/project --load docker/
+
+docker build -t shalex88/project --push docker/
 ```
 
 ## Update
