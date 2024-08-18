@@ -1,6 +1,6 @@
 # project-sensor
 
-![Architecture](docs/web_portal.png)
+![web-portal](docs/web_portal.png)
 
 ## Prerequisites
 
