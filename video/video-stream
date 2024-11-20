@@ -58,7 +58,7 @@ start_stream() {
         gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
     elif [ "$type" == "camera" ]; then
         cd $SCRIPT_DIR/gst-pipline-launch/build
-        ./gst-pipline-launch -i ../resources/pipeline_cam"$id".yaml > /dev/null 2>&1 &
+        ./gst-pipline-launch -i ../resources/pipeline_cam"$id".yaml -p 1234"$id" > /dev/null 2>&1 &
     fi
 
     echo $! > /tmp/gst_pipeline_$id.pid
@@ -78,7 +78,7 @@ stream_test_pattern() {
     echo "$type $id failed, showing test pattern"
 
     cd $SCRIPT_DIR/gst-pipline-launch/build
-    ./gst-pipline-launch -i ../resources/pipeline_cam"$id"_testpattern.yaml > /dev/null 2>&1 &
+    ./gst-pipline-launch -i ../resources/pipeline_cam"$id"_testpattern.yaml -p 1234"$id" > /dev/null 2>&1 &
     echo $! > /tmp/gst_pipeline_$id.pid
     sleep 2
 
