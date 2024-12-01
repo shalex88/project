@@ -29,4 +29,11 @@ install_dependencies() {
     fi
 }
 
+install_pipeline_runner() {
+    cd gst-pipeline-launch || exit
+    cmake -B build
+    cmake --build build
+}
+
 install_dependencies
+install_pipeline_runner
