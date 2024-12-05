@@ -30,7 +30,7 @@ install_dependencies() {
 }
 
 install_pipeline_runner() {
-    cd gst-pipeline-launch || exit
+    cd $SCRIPT_DIR/gst-pipeline-launch || exit
     cmake -B build
     cmake --build build
 }
