@@ -7,6 +7,6 @@
 [submodule "video-processing"]
 	path = video/video-processing
 	url = https://github.com/shalex88/gst-plugins-python
-[submodule "video/gst-pipline-launch"]
-	path = video/gst-pipline-launch
-	url = https://github.com/shalex88/gst-pipline-launch
+[submodule "gst-pipeline-launch"]
+	path = video/gst-pipeline-launch
+	url = https://github.com/shalex88/gst-pipeline-launch
