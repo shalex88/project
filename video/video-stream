@@ -1,0 +1,130 @@
+#!/bin/bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+debug_print() {
+    if [ -n "$DEBUG" ]; then
+        echo "$1"
+    fi
+}
+
+usage() {
+    echo "usage: $(basename "$0") [ACTION] [SOURCE] [ID] [PREPROCESSING] [POSTPROCESSING]"
+    echo "ACTION <start|stop> - template project language"
+    echo "SOURCE <camera|file> - video source"
+    echo "ID <1|2|..|all|movie.mp4> - camera id, all cameras or movie file name"
+    echo "PREPROCESSING <true|false> - custom preprocessing element"
+    echo "POSTPROCESSING <true|false> - custom postprocessing element"
+    echo "example:"
+    echo "./$(basename "$0") start camera 1 true true"
+    echo "./$(basename "$0") stop camera all"
+    echo "./$(basename "$0") start file movie.mp4 true true"
+}
+
+# Function to start the stream
+start_stream() {
+    [[ -s /home/fronti/.hailo/tappas/tappas_env ]] && . /home/fronti/.hailo/tappas/tappas_env
+    export GST_PLUGIN_PATH+="$SCRIPT_DIR/video-processing"
+    type=$1
+    id=$2
+    stream_id=$id
+
+    if [ "$3" = "true" ]; then
+        preprocessing="! preprocessing"
+    fi
+
+    if [ "$4" = "true" ]; then
+        postprocessing="! postprocessing"
+    fi
+
+    if [ "$type" == "file" ]; then
+        stream_id=0
+    fi
+
+    stop_stream $type $id
+    echo "Starting $type $id..."
+
+    # Sources
+    movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$id ! decodebin ! autovideoconvert"
+    multiple_video_processing="$preprocessing $postprocessing"
+    ecoder_format="video/x-raw(memory:NVMM),format=NV12"
+    nvh264_enc="nvvidconv ! $ecoder_format ! nvv4l2h264enc ! h264parse"
+    rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$stream_id"
+
+    if [ "$type" == "file" ]; then
+        source=$movie_src_element
+        streaming_pipeline="$source $multiple_video_processing ! $nvh264_enc ! $rtspclientsink"
+        debug_print "gst-launch-1.0 -v $streaming_pipeline"
+        gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
+    elif [ "$type" == "camera" ]; then
+        cd $SCRIPT_DIR/gst-pipeline-launch/build
+        ./gst-pipeline-launch -i ../resources/pipeline_cam"$id".yaml -p 1234"$id" > /dev/null 2>&1 &
+    fi
+
+    echo $! > /tmp/gst_pipeline_$id.pid
+
+    # Check if the pipeline is running
+    sleep 2
+    pid=$(cat /tmp/gst_pipeline_$id.pid)
+    if ps -p $pid > /dev/null; then
+        echo "$type $id success"
+    else
+        stream_test_pattern
+        return 0
+    fi
+}
+
+stream_test_pattern() {
+    echo "$type $id failed, showing test pattern"
+
+    cd $SCRIPT_DIR/gst-pipeline-launch/build
+    ./gst-pipeline-launch -i ../resources/pipeline_cam"$id"_testpattern.yaml -p 1234"$id" > /dev/null 2>&1 &
+    echo $! > /tmp/gst_pipeline_$id.pid
+    sleep 2
+
+    pid=$(cat /tmp/gst_pipeline_$id.pid)
+    if ! ps -p $pid > /dev/null; then
+        echo "Test pattern failed"
+        rm /tmp/gst_pipeline_$id.pid
+    else
+        echo "Test pattern success"
+    fi
+}
+
+stop_stream() {
+    type=$1
+    id=$2
+    if [ -f /tmp/gst_pipeline_$id.pid ]; then
+        # Kill the specific GStreamer pipeline process
+        kill "$(cat /tmp/gst_pipeline_$id.pid)" > /dev/null 2>&1
+        rm /tmp/gst_pipeline_$id.pid
+        echo "$type $id stopped"
+    else
+        echo "$type $id is not running"
+    fi
+}
+
+case "$1" in
+    start)
+        if [ "$2" == "camera" ] && [ "$3" == "all" ]; then
+            for i in {1..4}; do
+                start_stream $2 $i $4 $5
+            done
+        else
+            start_stream $2 $3 $4 $5
+        fi
+        ;;
+    stop)
+        if [ "$2" == "camera" ] && [ "$3" == "all" ]; then
+            for i in {1..4}; do
+                stop_stream $2 $i
+            done
+        else
+            stop_stream $2 $3
+        fi
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac

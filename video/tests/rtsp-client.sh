@@ -1,5 +1,15 @@
 #!/bin/bash
 
+usage() {
+    echo "usage: $(basename "$0") [CAMERA_ID] [RUN] [IP]"
+    echo "CAMERA_ID <1|2|..|all> - template project language"
+    echo "RUN <start|stop> - template project language"
+    echo "IP - target ip address"
+    echo "example:"
+    echo "./$(basename "$0") all start 172.25.125.18"
+    echo "./$(basename "$0") all stop"
+}
+
 install_dependencies() {
     sudo apt-get install -y gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-rtsp nvidia-l4t-gstreamer
 }
@@ -14,7 +24,8 @@ start_stream() {
     swh265decoding="rtph265depay ! h265parse config-interval=-1 ! libde265dec"
     nvh264decoding="rtph264depay ! h264parse config-interval=-1 ! nvv4l2decoder ! autovideoconvert"
     nvh265decoding="rtph265depay ! h265parse config-interval=-1 ! nvv4l2decoder ! autovideoconvert"
-    pipeline="rtspsrc location=rtsp://172.25.125.18:8554/stream$camera ! $swh264decoding ! fpsdisplaysink sync=false"
+    decoder=$swh264decoding
+    pipeline="rtspsrc location=rtsp://$ip:8554/stream$camera ! $decoder ! fpsdisplaysink sync=false"
     # Run the GStreamer pipeline in the background and redirect the output to /dev/null
     gst-launch-1.0 -v $pipeline > /dev/null &
     # Save the process ID of the pipeline
@@ -38,6 +49,7 @@ case "$2" in
         install_dependencies
         ;;
     start)
+        ip=$3
         case "$1" in
             1)
                 start_stream $1
@@ -90,7 +102,7 @@ case "$2" in
         esac
         ;;
     *)
-        echo "Usage: $0 {camera_id} {start|stop}"
+        usage
         exit 1
         ;;
 esac

@@ -3,11 +3,15 @@
 set_target_env() {
     target="Unknown"
     arch=$(uname -m)
+    if [ "$arch" == "x86_64" ]; then
+        arch="amd64"
+    fi
 
     if [ -e "/proc/device-tree/model" ]; then
         model=$(tr -d '\0' < /proc/device-tree/model)
         if [[ $model == *"Orin"* ]]; then
             target="ORIN"
+            arch=arm64
         fi
     fi
 
