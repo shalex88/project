@@ -17,7 +17,7 @@ set_target_env() {
             arch=arm64
         fi
     fi
-    
+
     ip=$(hostname -I | cut -d' ' -f1)
     echo "Running on $target $arch $ip"
     export TARGET=$target
@@ -33,6 +33,7 @@ system_configure() {
 
 clean() {
     stop_video_stream
+    stop_core_app
     stop_web_server
 }
 
@@ -53,16 +54,20 @@ run_media_server() {
     $PROJECT_DIR/video/media-server/run.sh
 }
 
-start_video_stream() {
-    echo "Starting video streams..."
-    $PROJECT_DIR/video/video-stream start camera all
-    echo "Starting video streams... Done!"
-}
-
 stop_video_stream() {
     echo "Stopping video streams..."
     $PROJECT_DIR/video/video-stream stop camera all
     echo "Stopping video streams... Done!"
+}
+
+run_core_app() {
+    echo "Starting core app..."
+    $PROJECT_DIR/app/project-core/target/debug/project-core &
+}
+
+stop_core_app() {
+    echo "Stopping core app..."
+    killall project-core
 }
 
 set_target_env
@@ -70,6 +75,7 @@ system_configure
 clean
 
 run_web_server
+run_core_app
 run_media_server
 
 clean

@@ -7,4 +7,10 @@ install_autorun_service() {
     sudo systemctl daemon-reload
 }
 
+install_core_app() {
+    cd $SCRIPT_DIR/project-core
+    cargo build
+}
+
 install_autorun_service
+install_core_app

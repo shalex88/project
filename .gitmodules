@@ -10,3 +10,6 @@
 [submodule "gst-pipeline-launch"]
 	path = video/gst-pipeline-launch
 	url = https://github.com/shalex88/gst-pipeline-launch
+[submodule "app/project-core"]
+	path = app/project-core
+	url = https://github.com/shalex88/project-core
