@@ -30,6 +30,7 @@ install_dependencies() {
 }
 
 install_pipeline_runner() {
+    sudo apt-get install curl zip unzip tar
     cd $SCRIPT_DIR/gst-pipeline-launch || exit
     cmake -B build
     cmake --build build
