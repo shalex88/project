@@ -5,10 +5,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 install_deepstream() {
     if ! command -v "deepstream-app" &> /dev/null; then
         file="deepstream-7.0_7.0.0-1_$ARCH.deb"
-        wget --content-disposition "https://api.ngc.nvidia.com/v2/resources/org/nvidia/deepstream/7.0/files?redirect=true&path=$file" -O $file
-        sudo apt install -y ./$file
-        rm -rf $file
-        cd /opt/nvidia/deepstream/deepstream/sources
+        wget --content-disposition "https://api.ngc.nvidia.com/v2/resources/org/nvidia/deepstream/7.0/files?redirect=true&path=$file" -O "$file"
+        sudo apt install -y ./"$file"
+        rm -rf "$file"
+        cd /opt/nvidia/deepstream/deepstream/sources || exit
         sudo git clone https://github.com/NVIDIA-AI-IOT/deepstream_python_apps.git -b v1.1.11
         git config --global --add safe.directory /opt/nvidia/deepstream/deepstream/sources/deepstream_python_apps
     fi
@@ -24,13 +24,14 @@ install_dependencies() {
 
     if [ "$TARGET" == "ORIN" ]; then
         sudo apt-get install -y nvidia-l4t-gstreamer
-        $SCRIPT_DIR/video-processing/install.sh
+        "$SCRIPT_DIR"/video-processing/install.sh
         install_deepstream
     fi
 }
 
 install_pipeline_runner() {
-    cd $SCRIPT_DIR/gst-pipeline-launch || exit
+    sudo apt-get install curl zip unzip tar
+    cd "$SCRIPT_DIR"/gst-pipeline-launch || exit
     cmake -B build
     cmake --build build
 }
