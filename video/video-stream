@@ -55,6 +55,7 @@ start_stream() {
         source=$movie_src_element
         streaming_pipeline="$source $multiple_video_processing ! $nvh264_enc ! $rtspclientsink"
         debug_print "gst-launch-1.0 -v $streaming_pipeline"
+        echo "gst-launch-1.0 $streaming_pipeline"
         gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
     elif [ "$type" == "camera" ]; then
         cd $SCRIPT_DIR/gst-pipeline-launch/build

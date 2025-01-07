@@ -17,7 +17,6 @@ install_dependencies() {
 # Function to start the stream
 start_stream() {
     camera=$1
-    port=$2
     echo "Starting the stream..."
     #TODO: Change the pipeline to match your camera settings and receive camera ID as an argument
     swh264decoding="rtph264depay ! h264parse config-interval=-1 ! openh264dec"
