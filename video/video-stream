@@ -15,6 +15,7 @@ usage() {
     echo "ID <1|2|..|all|movie.mp4> - camera id, all cameras or movie file name"
     echo "PREPROCESSING <true|false> - custom preprocessing element"
     echo "POSTPROCESSING <true|false> - custom postprocessing element"
+    echo "INFERENCE <true|false> - inference"
     echo "example:"
     echo "./$(basename "$0") start camera 1 true true"
     echo "./$(basename "$0") stop camera all"
@@ -37,6 +38,10 @@ start_stream() {
         postprocessing="! postprocessing"
     fi
 
+    if [ "$5" = "true" ]; then
+        atr="! mux.sink_0 nvstreammux name=mux batch-size=1 width=1920 height=1080 batched-push-timeout=40000 ! nvinfer config-file-path=/home/fronti/Downloads/Primary_Detector/config.yml ! nvvideoconvert ! nvdsosd"
+    fi
+
     if [ "$type" == "file" ]; then
         stream_id=0
     fi
@@ -48,12 +53,13 @@ start_stream() {
     movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$id ! decodebin ! autovideoconvert"
     multiple_video_processing="$preprocessing $postprocessing"
     ecoder_format="video/x-raw(memory:NVMM),format=NV12"
+    inference_processing="$atr"
     nvh264_enc="nvvidconv ! $ecoder_format ! nvv4l2h264enc ! h264parse"
     rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$stream_id"
 
     if [ "$type" == "file" ]; then
         source=$movie_src_element
-        streaming_pipeline="$source $multiple_video_processing ! $nvh264_enc ! $rtspclientsink"
+        streaming_pipeline="$source $multiple_video_processing $inference_processing ! $nvh264_enc ! $rtspclientsink"
         debug_print "gst-launch-1.0 -v $streaming_pipeline"
         echo "gst-launch-1.0 $streaming_pipeline"
         gst-launch-1.0 $streaming_pipeline > /dev/null 2>&1 &
@@ -112,7 +118,7 @@ case "$1" in
                 start_stream $2 $i $4 $5
             done
         else
-            start_stream $2 $3 $4 $5
+            start_stream $2 $3 $4 $5 $6
         fi
         ;;
     stop)
