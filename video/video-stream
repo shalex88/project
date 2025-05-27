@@ -9,12 +9,13 @@ debug_print() {
 }
 
 usage() {
-    echo "usage: $(basename "$0") [ACTION] [SOURCE] [ID] [PREPROCESSING] [POSTPROCESSING]"
+    echo "usage: $(basename "$0") [ACTION] [SOURCE] [ID] [PREPROCESSING] [ATR] [OVERLAY]"
     echo "ACTION <start|stop> - template project language"
     echo "SOURCE <camera|file> - video source"
     echo "ID <1|2|..|all|movie.mp4> - camera id, all cameras or movie file name"
     echo "PREPROCESSING <true|false> - custom preprocessing element"
-    echo "POSTPROCESSING <true|false> - custom postprocessing element"
+    echo "ATR <true|false> - ATR functionality"
+    echo "OVERLAY <true|false> - overlay element"
     echo "INFERENCE <true|false> - inference"
     echo "example:"
     echo "./$(basename "$0") start camera 1 true true"
@@ -35,11 +36,11 @@ start_stream() {
     fi
 
     if [ "$4" = "true" ]; then
-        postprocessing="! postprocessing"
+        atr="! mux.sink_0 nvstreammux name=mux batch-size=1 width=1920 height=1080 ! nvinfer config-file-path=/home/fronti/project/video/gst-pipeline-launch/resources/detector/infer_config.yml"
     fi
 
     if [ "$5" = "true" ]; then
-        atr="! mux.sink_0 nvstreammux name=mux batch-size=1 width=1920 height=1080 batched-push-timeout=40000 ! nvinfer config-file-path=/home/fronti/Downloads/Primary_Detector/config.yml ! nvvideoconvert ! nvdsosd"
+        overlay="! nvdsosd"
     fi
 
     if [ "$type" == "file" ]; then
@@ -49,15 +50,13 @@ start_stream() {
     stop_stream $type $id
     echo "Starting $type $id..."
 
-    # Sources
-    movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$id ! decodebin ! autovideoconvert"
-    multiple_video_processing="$preprocessing $postprocessing"
-    ecoder_format="video/x-raw(memory:NVMM),format=NV12"
-    inference_processing="$atr"
-    nvh264_enc="nvvidconv ! $ecoder_format ! nvv4l2h264enc ! h264parse"
-    rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$stream_id"
-
     if [ "$type" == "file" ]; then
+        movie_src_element="filesrc location=$SCRIPT_DIR/tests/movies/$id ! decodebin ! autovideoconvert"
+        multiple_video_processing="$preprocessing $postprocessing"
+        ecoder_format="video/x-raw(memory:NVMM),format=NV12"
+        inference_processing="$atr $overlay"
+        nvh264_enc="nvvideoconvert disable-passthrough=true ! $ecoder_format ! nvv4l2h264enc ! h264parse"
+        rtspclientsink="rtspclientsink location=rtsp://localhost:8554/stream$stream_id"
         source=$movie_src_element
         streaming_pipeline="$source $multiple_video_processing $inference_processing ! $nvh264_enc ! $rtspclientsink"
         debug_print "gst-launch-1.0 -v $streaming_pipeline"
